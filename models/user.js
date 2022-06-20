@@ -113,9 +113,7 @@ class User {
       WHERE m.from_username = $1;
     `, [username])
 
-    console.log(messagesFromUser.rows[0])
-
-    if (messagesFromUser.rows == undefined) {
+    if (messagesFromUser.rows[0] == undefined) {
       return false
     }
 
@@ -158,9 +156,7 @@ class User {
       WHERE m.to_username = $1;
     `, [username])
 
-    console.log(messagesToUser.rows[0])
-
-    if (messagesToUser.rows == undefined) {
+    if (messagesToUser.rows[0] == undefined) {
       return false
     }
 

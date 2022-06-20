@@ -79,6 +79,12 @@ describe("Test User class", function () {
       last_name: "Testy",
       phone: "+14155550000"
     }]);
+
+    await db.query(`
+      DELETE FROM users;
+    `)
+    let u2 = await User.all();
+    expect(u2).toBeFalsy();
   });
 });
 
@@ -128,6 +134,11 @@ describe("Test messages part of User class", function () {
         phone: "+14155552222",
       }
     }]);
+
+    await db.query(`DELETE FROM messages;`)
+
+    let m2 = await User.messagesFrom("test1");
+    expect(m2).toBeFalsy();
   });
 
   test('can get messages to user', async function () {
@@ -144,6 +155,11 @@ describe("Test messages part of User class", function () {
         phone: "+14155552222",
       }
     }]);
+
+    await db.query(`DELETE FROM messages;`)
+
+    let m2 = await User.messagesTo("test1");
+    expect(m2).toBeFalsy();
   });
 });
 
