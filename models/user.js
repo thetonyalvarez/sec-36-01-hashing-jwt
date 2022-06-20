@@ -1,6 +1,8 @@
 /** User class for message.ly */
 
-
+const db = require("../db");
+const bcrypt = require('bcrypt')
+const BCRYPT_WORK_FACTOR = 12;
 
 /** User of the site. */
 
@@ -11,21 +13,57 @@ class User {
    */
 
   static async register({username, password, first_name, last_name, phone}) {
-    
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR)
+    const result = await db.query(`
+      INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+      VALUES
+        ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
+      RETURNING username, password, first_name, last_name, phone;
+    `, [username, hashedPassword, first_name, last_name, phone]);
+
+    return result.rows[0]
   }
 
   /** Authenticate: is this username/password valid? Returns boolean. */
 
-  static async authenticate(username, password) { }
+  static async authenticate(username, password) {
+    const user = await db.query(`
+      SELECT password
+      FROM users
+      WHERE username = $1
+    `, [username]);
+
+    if (user.rows[0]) {
+      User.updateLoginTimestamp(user.rows[0]);
+      return await bcrypt.compare(password, user.rows[0].password) ? true : false
+    }
+  }
 
   /** Update last_login_at for user */
 
-  static async updateLoginTimestamp(username) { }
+  static async updateLoginTimestamp(username) {
+    await db.query(`
+      UPDATE users
+      SET last_login_at = current_timestamp
+      WHERE username = $1;
+    `, [username])
+  }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name, phone}, ...] */
 
-  static async all() { }
+  static async all() {
+    const users = await db.query(`
+      SELECT username, first_name, last_name, phone
+      FROM users;
+    `)
+
+    if (users.rows.length === 0) {
+      return false
+    }
+
+    return users.rows
+  }
 
   /** Get: get user by username
    *
@@ -36,7 +74,20 @@ class User {
    *          join_at,
    *          last_login_at } */
 
-  static async get(username) { }
+  static async get(username) {
+    const user = await db.query(`
+      SELECT username, first_name, last_name, phone, join_at, last_login_at
+      FROM users
+      WHERE username = $1;
+    `, [username]);
+
+    if (user.rows[0] == undefined) {
+      return false
+    }
+
+    return user.rows[0]
+
+  }
 
   /** Return messages from this user.
    *
@@ -46,7 +97,42 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) { }
+  static async messagesFrom(username) {
+    const messagesFromUser = await db.query(`
+      SELECT m.id, 
+              m.to_username,
+              u.first_name,
+              u.last_name,
+              u.phone,
+              m.body,
+              m.sent_at,
+              m.read_at
+      FROM messages m
+      INNER JOIN users u
+      ON m.to_username = u.username
+      WHERE m.from_username = $1;
+    `, [username])
+
+    console.log(messagesFromUser.rows[0])
+
+    if (messagesFromUser.rows == undefined) {
+      return false
+    }
+
+    return messagesFromUser.rows.map((m) => ({
+      id: m.id,
+      to_user: {
+        username: m.to_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }))
+
+  }
 
   /** Return messages to this user.
    *
@@ -56,7 +142,41 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesTo(username) { }
+  static async messagesTo(username) {
+      const messagesToUser = await db.query(`
+      SELECT m.id, 
+              m.from_username,
+              u.first_name,
+              u.last_name,
+              u.phone,
+              m.body,
+              m.sent_at,
+              m.read_at
+      FROM messages m
+      INNER JOIN users u
+      ON m.from_username = u.username
+      WHERE m.to_username = $1;
+    `, [username])
+
+    console.log(messagesToUser.rows[0])
+
+    if (messagesToUser.rows == undefined) {
+      return false
+    }
+
+    return messagesToUser.rows.map((m) => ({
+      id: m.id,
+      from_user: {
+        username: m.from_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }))
+  }
 }
 
 

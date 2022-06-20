@@ -1,7 +1,11 @@
+process.env.NODE_ENV = 'test';
+
+// npm packages
+const request = require("supertest");
+
 const db = require("../db");
 const User = require("../models/user");
 const Message = require("../models/message");
-
 
 describe("Test User class", function () {
   beforeEach(async function () {
@@ -37,6 +41,10 @@ describe("Test User class", function () {
     expect(isValid).toBeFalsy();
   });
 
+  test("cannot authenticate with invalid user", async function () {
+    let isInvalid = await User.authenticate("testincorrect", "password");
+    expect(isInvalid).toBeFalsy();
+  });
 
   test("can update login timestamp", async function () {
     await db.query("UPDATE users SET last_login_at=NULL WHERE username='test'");
@@ -58,6 +66,9 @@ describe("Test User class", function () {
       last_login_at: expect.any(Date),
       join_at: expect.any(Date),
     });
+
+    let invalidU = await User.get('nonexistentuser');
+    expect(invalidU).toBeFalsy();
   });
 
   test("can get all", async function () {
