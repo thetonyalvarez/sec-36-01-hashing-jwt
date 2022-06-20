@@ -10,7 +10,9 @@ class User {
    *    {username, password, first_name, last_name, phone}
    */
 
-  static async register({username, password, first_name, last_name, phone}) { }
+  static async register({username, password, first_name, last_name, phone}) {
+    
+  }
 
   /** Authenticate: is this username/password valid? Returns boolean. */
 
