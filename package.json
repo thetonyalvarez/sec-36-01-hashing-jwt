@@ -1,10 +1,14 @@
 {
   "name": "messagely",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest -i"
+    "test": "jest -i --runInBand",
+    "test:watch": "jest --watch --runInBand",
+    "start": "node server.js"
+  },
+  "jest": {
+    "verbose": true
   },
   "author": "",
   "license": "ISC",
@@ -13,10 +17,23 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "dotenv": "^6.1.0",
-    "express": "^4.16.4",
+    "express": "^4.18.1",
     "express-cors": "0.0.3",
     "jsonwebtoken": "^8.3.0",
-    "pg": "^8.3.3",
+    "pg": "^8.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thetonyalvarez/sec-36-01-hashing-jwt.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/thetonyalvarez/sec-36-01-hashing-jwt/issues"
+  },
+  "homepage": "https://github.com/thetonyalvarez/sec-36-01-hashing-jwt#readme",
+  "description": "",
+  "devDependencies": {
+    "jest": "^28.1.1",
     "supertest": "^4.0.2"
   }
 }
