@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const { SECRET_KEY } = require("../config");
 
-const { authenticateJWT, ensureLoggedIn } = require("../middleware/auth")
+const { authenticateJWT, ensureLoggedIn, ensureCorrectUser } = require("../middleware/auth")
 
 const ExpressError = require("../expressError");
 
@@ -28,7 +28,7 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
  * => {user: {username, first_name, last_name, phone, join_at, last_login_at}}
  *
  **/
-router.get('/:username', async (req, res, next) => {
+router.get('/:username', ensureCorrectUser, async (req, res, next) => {
     try {
         const user = await User.get(req.params.username);
         return res.json({user: user})
@@ -47,8 +47,13 @@ router.get('/:username', async (req, res, next) => {
  *                 from_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.get('/:username/to', async (req, res, next) => {
+router.get('/:username/to', ensureLoggedIn, async (req, res, next) => {
     try {
+        let user = await User.get(req.params.username)
+
+        if (req.user.username !== user.username) {
+            throw new ExpressError("Unauthorized user.", 401)
+        }
         const messagesTo = await User.messagesTo(req.params.username)
         return res.json({messages: messagesTo})
     } catch (err) {
@@ -65,8 +70,13 @@ router.get('/:username/to', async (req, res, next) => {
  *                 to_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.get('/:username/from', async (req, res, next) => {
+router.get('/:username/from', ensureLoggedIn, async (req, res, next) => {
     try {
+        let user = await User.get(req.params.username)
+
+        if (req.user.username !== user.username) {
+            throw new ExpressError("Unauthorized user.", 401)
+        }
         const messagesFrom = await User.messagesFrom(req.params.username)
         return res.json({messages: messagesFrom})
     } catch (err) {
