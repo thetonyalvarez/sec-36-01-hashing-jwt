@@ -15,6 +15,7 @@ let u2;
 beforeEach(async function () {
 	await db.query("DELETE FROM messages");
 	await db.query("DELETE FROM users");
+    await db.query("ALTER SEQUENCE messages_id_seq RESTART WITH 1");
 
 	u1 = await User.register({
 		username: "test1",
@@ -31,6 +32,10 @@ beforeEach(async function () {
 		last_name: "Testy2",
 		phone: "+14155550001",
 	});
+
+    await Message.create({from_username: u1.username, to_username: u2.username, body: 'u1-to-u2 A'})
+    await Message.create({from_username: u2.username, to_username: u1.username, body: 'u2-to-u1 B'})
+
 
 	testToken = jwt.sign({ username: "test1" }, SECRET_KEY);
 
@@ -65,6 +70,7 @@ describe("Users Routes Test", function () {
 			});
 		});
 		test("can't find users", async function () {
+			await db.query(`DELETE FROM messages;`)
 			await db.query(`DELETE FROM users;`)
 			
 			try {
@@ -105,35 +111,10 @@ describe("Users Routes Test", function () {
 		});
 	});
 
-	/** GET /users/username/from - get all messages from user */
-	
-	describe("GET /users/username/from", function () {
-		
-		test("Get messages from single user", async function () {
-			await Message.create({from_username: u2.username, to_username: u1.username, body: 'u2-to-u1 B'})
-			
-			let response = await request(app)
-				.get("/users/test2/from")
-				.send({ _token: testToken });
-			
-			expect(response.body.messages[0].body).toEqual("u2-to-u1 B")
-		})
-		test("Can't get messages from single user", async function () {
-			try {
-				await request(app)
-					.get("/users/test2/from")
-					.send({ _token: testToken })
-			} catch (err) {
-				expect(err).toEqual(err)
-			}
-		})
-	});
-	
 	/** GET /users/username/to - get all messages to user */
 
 	describe("GET /users/username/to", function () {
 		test("Get messages to single user", async function () {
-			await Message.create({from_username: u2.username, to_username: u1.username, body: 'u2-to-u1 B'})
 
 			let response = await request(app)
 				.get("/users/test1/to")
@@ -141,7 +122,7 @@ describe("Users Routes Test", function () {
 			
 			expect(response.body.messages[0].body).toEqual("u2-to-u1 B")
 		})
-		test("Can't get messages to single user", async function () {
+		test("Can't view another user's to messages", async function () {
 			try {
 				await request(app)
 					.get("/users/test2/to")
@@ -151,8 +132,30 @@ describe("Users Routes Test", function () {
 			}
 		})
 	})
-});
 
+	/** GET /users/username/from - get all messages from user */
+	
+	describe("GET /users/username/from", function () {
+		
+		test("Get messages from single user", async function () {
+			let response = await request(app)
+				.get("/users/test1/from")
+				.send({ _token: testToken });
+		
+			expect(response.body.messages[0].body).toEqual("u1-to-u2 A")
+		});
+		test("Can't view another user's from messages", async function () {
+			try {
+				await request(app)
+					.get("/users/test2/from")
+					.send({ _token: testToken }); 
+			} catch (err) {
+				expect(err).toEqual(err)
+			}
+		});
+	});
+});
+	
 afterAll(async function () {
 	await db.end();
 });

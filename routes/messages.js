@@ -6,7 +6,7 @@ const User = require("../models/user");
 const Message = require("../models/message");
 const { SECRET_KEY } = require("../config");
 
-const { authenticateJWT, ensureLoggedIn } = require("../middleware/auth")
+const { authenticateJWT, ensureLoggedIn, ensureCorrectUser } = require("../middleware/auth")
 
 const ExpressError = require("../expressError");
 
@@ -22,10 +22,16 @@ const ExpressError = require("../expressError");
  * Make sure that the currently-logged-in users is either the to or from user.
  *
  **/
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', ensureLoggedIn, async (req, res, next) => {
     try {
+        let user = req.user.username
         const message = await Message.get(req.params.id);
-        return res.json({ message: message })
+        
+        if (message.from_user.username == user || message.to_user.username == user) {
+            return res.json({ message: message })
+        }
+        
+        throw new ExpressError("Unauthorized user.", 401)
     } catch (err) {
         return next(err);
     }
@@ -37,7 +43,7 @@ router.get('/:id', async (req, res, next) => {
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
-router.post('/', async (req, res, next) => {
+router.post('/', ensureLoggedIn, async (req, res, next) => {
     try {
         let msg = await Message.create({
             from_username: req.user.username,
@@ -58,10 +64,17 @@ router.post('/', async (req, res, next) => {
  * Make sure that the only the intended recipient can mark as read.
  *
  **/
-router.post('/:id/read', async (req, res, next) => {
+router.post('/:id/read', ensureLoggedIn, async (req, res, next) => {
     try {
-        let msg = await Message.markRead(req.params.id)
-        return res.json({ message: msg })
+        let user = req.user.username;
+        let msg = await Message.get(req.params.id)
+
+        if (msg.to_user.username !== user) {
+            throw new ExpressError("Unauthorized user.", 401)
+        } 
+        let message = await Message.markRead(req.params.id)
+        return res.json({ message })
+
     } catch (err) {
         return next(err)
     }
