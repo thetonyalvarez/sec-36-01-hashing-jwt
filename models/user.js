@@ -4,6 +4,8 @@ const db = require("../db");
 const bcrypt = require('bcrypt')
 const BCRYPT_WORK_FACTOR = 12;
 
+const ExpressError = require("../expressError");
+
 /** User of the site. */
 
 class User {
@@ -34,7 +36,6 @@ class User {
     `, [username]);
 
     if (user.rows[0]) {
-      User.updateLoginTimestamp(user.rows[0]);
       return await bcrypt.compare(password, user.rows[0].password) ? true : false
     }
   }
@@ -55,11 +56,13 @@ class User {
   static async all() {
     const users = await db.query(`
       SELECT username, first_name, last_name, phone
-      FROM users;
+      FROM users
+      ORDER BY username
+      ;
     `)
 
     if (users.rows.length === 0) {
-      return false
+      throw new ExpressError("No users found.", 404)
     }
 
     return users.rows
@@ -82,7 +85,7 @@ class User {
     `, [username]);
 
     if (user.rows[0] == undefined) {
-      return false
+      throw new ExpressError("Cannot find user.", 404)
     }
 
     return user.rows[0]
@@ -114,7 +117,7 @@ class User {
     `, [username])
 
     if (messagesFromUser.rows[0] == undefined) {
-      return false
+      throw new ExpressError("Cannot find messages from this user.", 404)
     }
 
     return messagesFromUser.rows.map((m) => ({
@@ -141,7 +144,7 @@ class User {
    */
 
   static async messagesTo(username) {
-      const messagesToUser = await db.query(`
+    const messagesToUser = await db.query(`
       SELECT m.id, 
               m.from_username,
               u.first_name,
@@ -157,7 +160,7 @@ class User {
     `, [username])
 
     if (messagesToUser.rows[0] == undefined) {
-      return false
+      throw new ExpressError("Cannot find messages to this user.", 404)
     }
 
     return messagesToUser.rows.map((m) => ({
