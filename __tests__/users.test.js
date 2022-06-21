@@ -37,13 +37,20 @@ describe("Test User class", function () {
     let isValid = await User.authenticate("test", "password");
     expect(isValid).toBeTruthy();
 
-    isValid =  await User.authenticate("test", "xxx");
-    expect(isValid).toBeFalsy();
+    try {
+      await User.authenticate("test", "xxx");
+    } catch (err) {
+      expect(err).toEqual(err)
+    }
+
   });
 
   test("cannot authenticate with invalid user", async function () {
-    let isInvalid = await User.authenticate("testincorrect", "password");
-    expect(isInvalid).toBeFalsy();
+    try {
+      await User.authenticate("testincorrect", "password");
+    } catch (err) {
+      expect(err).toEqual(err)
+    }
   });
 
   test("can update login timestamp", async function () {
@@ -67,8 +74,11 @@ describe("Test User class", function () {
       join_at: expect.any(Date),
     });
 
-    let invalidU = await User.get('nonexistentuser');
-    expect(invalidU).toBeFalsy();
+    try {
+      await User.get('nonexistentuser');
+    } catch (err) {
+      expect(err).toEqual(err)
+    }
   });
 
   test("can get all", async function () {
@@ -80,11 +90,13 @@ describe("Test User class", function () {
       phone: "+14155550000"
     }]);
 
-    await db.query(`
-      DELETE FROM users;
-    `)
-    let u2 = await User.all();
-    expect(u2).toBeFalsy();
+    await db.query(`DELETE FROM users;`)
+
+    try {
+      await User.all();
+    } catch (err) {
+      expect(err).toEqual(err)
+    }
   });
 });
 
@@ -137,8 +149,11 @@ describe("Test messages part of User class", function () {
 
     await db.query(`DELETE FROM messages;`)
 
-    let m2 = await User.messagesFrom("test1");
-    expect(m2).toBeFalsy();
+    try {
+      await User.messagesFrom("test1");
+    } catch (err) {
+      expect(err).toEqual(err)
+    }
   });
 
   test('can get messages to user', async function () {
@@ -158,8 +173,12 @@ describe("Test messages part of User class", function () {
 
     await db.query(`DELETE FROM messages;`)
 
-    let m2 = await User.messagesTo("test1");
-    expect(m2).toBeFalsy();
+    try {
+      await User.messagesTo("test1");
+    } catch (err) {
+      expect(err).toEqual(err)
+    }
+
   });
 });
 

@@ -8,7 +8,7 @@
     "start": "node server.js"
   },
   "jest": {
-    "verbose": true
+    "verbose": false
   },
   "author": "",
   "license": "ISC",
